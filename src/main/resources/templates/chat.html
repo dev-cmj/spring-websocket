@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>가위바위보 게임</title>
+</head>
+<body>
+<h2>1:1 가위바위보 게임</h2>
+<div id="status">매칭 대기 중...</div>
+<input type="text" id="choice" placeholder="가위, 바위, 보 중 하나를 입력하세요" />
+<button onclick="sendChoice()">선택하기</button>
+<div id="result"></div>
+
+<script>
+    let socket = new WebSocket("ws://localhost:8080/rps");
+
+    socket.onopen = function() {
+        document.getElementById("status").innerText = "상대방을 기다리는 중입니다...";
+    };
+
+    socket.onmessage = function(event) {
+        document.getElementById("result").innerHTML += "<p>" + event.data + "</p>";
+    };
+
+    socket.onclose = function() {
+        document.getElementById("status").innerText = "연결이 종료되었습니다.";
+    };
+
+    function sendChoice() {
+        let choice = document.getElementById("choice").value;
+        socket.send(choice);
+    }
+</script>
+</body>
+</html>

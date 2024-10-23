@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>가위바위보 게임</title>
+</head>
+<body>
+<h2>1:1 가위바위보 게임</h2>
+<div id="status">매칭 대기 중...</div>
+
+<!-- 가위, 바위, 보 선택 버튼 -->
+<button onclick="sendChoice('가위')">가위</button>
+<button onclick="sendChoice('바위')">바위</button>
+<button onclick="sendChoice('보')">보</button>
+
+<div id="result"></div>
+
+<script>
+    let socket = new WebSocket("ws://localhost:8080/rps");
+
+    socket.onopen = function() {
+        document.getElementById("status").innerText = "상대방을 기다리는 중입니다...";
+    };
+
+    socket.onmessage = function(event) {
+        console.log(event.data);
+        document.getElementById("result").innerHTML += "<p>" + event.data + "</p>";
+
+        // 결과가 나왔을때 1초 후 재접속 버튼 생성
+        if (event.data.includes("이겼습니다") || event.data.includes("졌습니다") || event.data.includes("무승부")) {
+            setTimeout(() => {
+                //location reload 말고
+                // document.getElementById("result").innerHTML += "<button onclick='location.reload()'>재접속</button>";
+                document.getElementById("result").innerHTML += "<button onclick='reconnect()'>재접속</button>";
+            }, 1000);
+        }
+    };
+
+    socket.onclose = function() {
+        document.getElementById("status").innerText = "연결이 종료되었습니다.";
+    };
+
+    // 선택한 값을 서버로 전송
+    function sendChoice(choice) {
+        socket.send(choice);
+    }
+
+    function reconnect() {
+        socket.onclose = function() {
+            document.getElementById("status").innerText = "재접속 중입니다...";
+        };
+
+        socket = new WebSocket("ws://localhost:8080/rps");
+
+        socket.onopen = function() {
+            document.getElementById("result").innerHTML = "";
+            document.getElementById("status").innerText = "상대방을 기다리는 중입니다...";
+        };
+
+        socket.onmessage = function(event) {
+            console.log(event.data);
+            document.getElementById("result").innerHTML += "<p>" + event.data + "</p>";
+
+            if (event.data.includes("이겼습니다") || event.data.includes("졌습니다") || event.data.includes("무승부")) {
+                setTimeout(() => {
+                    document.getElementById("result").innerHTML += "<button onclick='reconnect()'>재접속</button>";
+                }, 1000);
+            }
+        };
+    }
+</script>
+</body>
+</html>
