@@ -16,7 +16,7 @@
 <div id="result"></div>
 
 <script>
-    let socket = new WebSocket("ws://localhost:8080/rps");
+    let socket = new WebSocket("ws://localhost:8080/ws/rps");
 
     socket.onopen = function() {
         document.getElementById("status").innerText = "상대방을 기다리는 중입니다...";

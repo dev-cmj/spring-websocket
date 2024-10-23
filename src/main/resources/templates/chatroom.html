@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>실시간 채팅방</title>
+</head>
+<body>
+<h2>채팅방: <span id="roomName"></span></h2>
+<div id="status">연결 상태: 대기 중...</div>
+<input type="text" id="message" placeholder="메시지를 입력하세요" />
+<button onclick="sendMessage()">전송</button>
+<div id="chat"></div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const roomName = /*[[${roomName}]]*/ '';
+  let socket = new WebSocket("ws://localhost:8080/ws/chat/" + roomName);
+  let chatDiv = document.getElementById("chat");
+    document.getElementById("roomName").innerText = roomName;
+
+  socket.onopen = function() {
+    document.getElementById("status").innerText = "연결 상태: 연결됨";
+  };
+
+  socket.onmessage = function(event) {
+    let newMessage = document.createElement("p");
+    newMessage.textContent = event.data;
+    chatDiv.appendChild(newMessage);
+  };
+
+  socket.onclose = function() {
+    document.getElementById("status").innerText = "연결 상태: 연결 종료됨";
+  };
+
+  function sendMessage() {
+    let message = document.getElementById("message").value;
+    socket.send(message);
+  }
+    /*]]>*/
+</script>
+</body>
+</html>

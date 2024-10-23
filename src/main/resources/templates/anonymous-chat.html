@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Chat</title>
+</head>
+<body>
+<h2>WebSocket 1:1 채팅</h2>
+<input type="text" id="message" placeholder="메시지를 입력하세요"/>
+<button onclick="sendMessage()">메시지 보내기</button>
+<div id="chatLog"></div>
+
+<script>
+    // WebSocket 연결 생성
+    const socket = new WebSocket("ws://localhost:8080/ws/anonymous-chat");
+
+    // WebSocket 연결이 열릴 때
+    socket.onopen = function() {
+        console.log("WebSocket 연결이 열렸습니다.");
+    };
+
+    // 서버로부터 메시지를 받을 때
+    socket.onmessage = function(event) {
+        const chatLog = document.getElementById("chatLog");
+        chatLog.innerHTML += "<p>서버 응답: " + event.data + "</p>";
+    };
+
+    // WebSocket 연결이 닫힐 때
+    socket.onclose = function() {
+        console.log("WebSocket 연결이 닫혔습니다.");
+    };
+
+    // 메시지를 서버로 전송하는 함수
+    function sendMessage() {
+        const message = document.getElementById("message").value;
+        socket.send(message);
+    }
+</script>
+</body>
+</html>
