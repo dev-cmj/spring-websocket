@@ -47,4 +47,9 @@ public class WebController {
         return "chatroom";
     }
 
+    @GetMapping("/omok")
+    public String omok() {
+        return "omok";
+    }
+
 }
