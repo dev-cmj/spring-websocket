@@ -52,4 +52,8 @@ public class WebController {
         return "omok";
     }
 
+    @GetMapping("/stock")
+    public String stock() {
+        return "stock";
+    }
 }
