@@ -1,41 +1,136 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>실시간 채팅방</title>
+    <meta charset="UTF-8">
+    <title>실시간 채팅방</title>
+    <style>
+        #spinner {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 100px;
+            height: 100px;
+            margin-top: -50px;
+            margin-left: -50px;
+            border: 16px solid #f3f3f3;
+            border-top: 16px solid #3498db;
+            border-radius: 50%;
+            animation: spin 2s linear infinite;
+            z-index: 1001;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 화면을 어둡게 하는 오버레이 */
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* 어두운 반투명 배경 */
+            z-index: 1000;
+            display: none; /* 처음엔 숨겨놓기 */
+        }
+
+        /* 오버레이가 활성화되면 클릭 방지 */
+        body.overlay-active {
+            pointer-events: none;
+        }
+
+    </style>
 </head>
 <body>
 <h2>채팅방: <span id="roomName"></span></h2>
 <div id="status">연결 상태: 대기 중...</div>
-<input type="text" id="message" placeholder="메시지를 입력하세요" />
+<input type="text" id="message" placeholder="메시지를 입력하세요"/>
 <button onclick="sendMessage()">전송</button>
 <div id="chat"></div>
+
+<!-- 화면 어둡게 하는 오버레이 및 스피너 -->
+<div id="overlay"></div>
+<div id="spinner"></div>
 
 <script th:inline="javascript">
     /*<![CDATA[*/
     const roomName = /*[[${roomName}]]*/ '';
-  let socket = new WebSocket("ws://localhost:8080/ws/chat/" + roomName);
-  let chatDiv = document.getElementById("chat");
+    let socket;
+    let retryAttempts = 0;
+    const maxRetries = 5; // 최대 재시도 횟수
+    const retryDelay = 5000; // 재시도 대기 시간 (5초)
+
+    let chatDiv = document.getElementById("chat");
     document.getElementById("roomName").innerText = roomName;
 
-  socket.onopen = function() {
-    document.getElementById("status").innerText = "연결 상태: 연결됨";
-  };
+    // 스피너 및 오버레이 요소
+    let spinner = document.getElementById("spinner");
+    let overlay = document.getElementById("overlay");
 
-  socket.onmessage = function(event) {
-    let newMessage = document.createElement("p");
-    newMessage.textContent = event.data;
-    chatDiv.appendChild(newMessage);
-  };
+    function connectSocket() {
+        // WebSocket 연결 시작
+        socket = new WebSocket("ws://localhost:8080/ws/chat/" + roomName);
 
-  socket.onclose = function() {
-    document.getElementById("status").innerText = "연결 상태: 연결 종료됨";
-  };
+        // 연결 대기 중에 스피너 및 오버레이 활성화
+        spinner.style.display = "block";
+        overlay.style.display = "block";
+        document.body.classList.add('overlay-active');
 
-  function sendMessage() {
-    let message = document.getElementById("message").value;
-    socket.send(message);
-  }
+        socket.onopen = function () {
+            document.getElementById("status").innerText = "연결 상태: 연결됨";
+            // 연결되면 스피너 및 오버레이 숨기기
+            spinner.style.display = "none";
+            overlay.style.display = "none";
+            document.body.classList.remove('overlay-active');
+            retryAttempts = 0; // 재시도 횟수 초기화
+        };
+
+        socket.onmessage = function (event) {
+            let newMessage = document.createElement("p");
+            newMessage.textContent = event.data;
+            chatDiv.appendChild(newMessage);
+        };
+
+        socket.onclose = function () {
+            document.getElementById("status").innerText = "연결 상태: 연결 종료됨";
+            // 연결 종료되면 스피너 및 오버레이 다시 보여주기
+            spinner.style.display = "block";
+            overlay.style.display = "block";
+            document.body.classList.add('overlay-active');
+
+            if (retryAttempts < maxRetries) {
+                retryAttempts++;
+                console.log(`재연결 시도 ${retryAttempts}/${maxRetries}...`);
+                setTimeout(connectSocket, retryDelay); // 5초마다 연결 재시도
+            } else {
+                // 스피너 및 오버레이 숨기기
+                spinner.style.display = "none";
+                overlay.style.display = "none";
+                document.body.classList.remove('overlay-active');
+
+                alert('연결 실패: 재연결 시도 횟수 초과');
+
+            }
+        };
+    }
+
+    connectSocket(); // 최초 연결 시도
+
+    function sendMessage() {
+        let message = document.getElementById("message").value;
+        if (socket.readyState === WebSocket.OPEN) {
+            socket.send(message);
+        } else {
+            alert("서버에 연결되지 않았습니다. 잠시 후 다시 시도하세요.");
+        }
+    }
+
     /*]]>*/
 </script>
 </body>

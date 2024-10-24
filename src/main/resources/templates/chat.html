@@ -1,37 +1,29 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>채팅방 목록</title>
+    <meta charset="UTF-8">
+    <title>채팅방 목록</title>
 
-  <script>
-    function createRoom(event) {
-      event.preventDefault();
-      const roomName = document.getElementsByName("roomName")[0].value;
-      // UTF-8로 인코딩하여 파라미터로 전달
-      location.href = "/chat/" + encodeURIComponent(roomName);
-    }
-  </script>
+    <script>
+        function createRoom(event) {
+            event.preventDefault();
+            const roomName = document.getElementsByName("roomName")[0].value;
+            location.href = "/chat/" + encodeURIComponent(roomName);
+        }
+    </script>
 </head>
 <body>
-<script th:inline="javascript">
-  /*<![CDATA[*/
-  const rooms = /*[[${rooms}]]*/ [];
-  /*]]>*/
-  console.log(rooms);
-</script>
 <h2>방 목록</h2>
 <ul>
-  <th:block th:each="room : ${rooms}">
-    <li><a th:href="@{'/chat/' + ${room}}">[[${room}]]</a></li>
-  </th:block>
+    <th:block th:each="room : ${rooms}">
+        <li><a th:href="@{'/chat/' + ${room.getRoomName()}}"><span th:text="${room.getRoomName()} + ' (' + ${room.getUserCount()} + '명)'"></span></a></li>
+    </th:block>
 </ul>
 
 <h3>새로운 채팅방 만들기</h3>
 <form action="/chat" method="get" onsubmit="createRoom(event)">
-  <input type="text" name="roomName" placeholder="채팅방 이름" />
-  <button type="submit">만들기</button>
+    <input type="text" name="roomName" placeholder="채팅방 이름"/>
+    <button type="submit">만들기</button>
 </form>
 </body>
 </html>
